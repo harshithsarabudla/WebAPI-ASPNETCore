@@ -5,7 +5,11 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+
+using System.Data;
+using System.Configuration;
 using System.Data.SqlClient;
+using System.Net;
 
 namespace WebAPI.Controllers
 {
@@ -23,26 +27,22 @@ namespace WebAPI.Controllers
         [HttpGet]
         public JsonResult Get()
         {
-            
-                SqlCommand command = new SqlCommand(
-                  "SELECT DepartmentId, DepartmentName FROM Department;");
-            
 
-            SqlDataReader reader = command.ExecuteReader();
-
-            if (reader.HasRows)
+            string query = @"
+                    select DepartmentId,DepartmentName from
+                    dbo.Department
+                    ";
+            DataTable table = new DataTable();
+            using (var con = new SqlConnection(ConfigurationManager.
+                ConnectionStrings["EmployeeAppDB"].ConnectionString))
+            using (var cmd = new SqlCommand(query, con))
+            using (var da = new SqlDataAdapter(cmd))
             {
-                while (reader.Read())
-                {
-                    Console.WriteLine("{0}\t{1}", reader.GetInt32(0),
-                        reader.GetString(1));
-                }
+                cmd.CommandType = CommandType.Text;
+                da.Fill(table);
             }
-            else
-            {
-                Console.WriteLine("No rows found.");
-            }
-            reader.Close();
+            return Request.CreateResponse(HttpStatusCode.OK, table);
+    
         }
 
     }
